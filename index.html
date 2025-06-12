@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Desafío en la Naturaleza</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f0f9f5; }
+    .hidden { display: none; }
+    button { padding: 10px 20px; margin: 10px; }
+    .pregunta { margin: 20px 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #888; padding: 10px; text-align: left; }
+  </style>
+</head>
+<body>
+
+<h1>🌲 Desafío en la Naturaleza 🌲</h1>
+
+<div id="pantallaInicio">
+  <p>Ingrese su nombre para comenzar:</p>
+  <input type="text" id="nombreInput" placeholder="Tu nombre...">
+  <button onclick="iniciarJuego()">Iniciar</button>
+</div>
+
+<div id="nivel1" class="hidden">
+  <h2>Nivel 1: Explorador Principiante</h2>
+  <div class="pregunta">
+    <p>1. ¿Qué juego es ideal para romper el hielo?</p>
+    <button onclick="responder(1, true)">Formar grupos o mezcladores</button>
+    <button onclick="responder(1, false)">Acechar</button>
+  </div>
+  <div class="pregunta">
+    <p>2. ¿Qué modalidad de armado de grupos promueve rapidez?</p>
+    <button onclick="responder(1, true)">Por comando</button>
+    <button onclick="responder(1, false)">Voluntaria</button>
+  </div>
+</div>
+
+<div id="nivel2" class="hidden">
+  <h2>Nivel 2: Explorador Experto</h2>
+  <div class="pregunta">
+    <p>1. ¿Cuál de estos es un juego de persecución?</p>
+    <button onclick="responder(2, true)">El Lobo Solitario</button>
+    <button onclick="responder(2, false)">El Amigo Invisible</button>
+  </div>
+  <div class="pregunta">
+    <p>2. ¿Qué recorrido es más fácil para chicos pequeños?</p>
+    <button onclick="responder(2, true)">Radial</button>
+    <button onclick="responder(2, false)">Convergente</button>
+  </div>
+</div>
+
+<div id="nivel3" class="hidden">
+  <h2>Nivel 3: Explorador Maestro</h2>
+  <div class="pregunta">
+    <p>1. ¿Qué habilidad se desarrolla en juegos de acechar?</p>
+    <button onclick="responder(3, true)">Camuflaje</button>
+    <button onclick="responder(3, false)">Velocidad de carrera</button>
+  </div>
+  <div class="pregunta">
+    <p>2. ¿Qué juego requiere hablar con desconocidos?</p>
+    <button onclick="responder(3, true)">Investigación</button>
+    <button onclick="responder(3, false)">Ataque y Defensa</button>
+  </div>
+</div>
+
+<div id="pantallaFinal" class="hidden">
+  <h2>🏆 Tabla de Posiciones</h2>
+  <table id="ranking">
+    <tr><th>Nombre</th><th>Puntos</th></tr>
+  </table>
+</div>
+
+<script>
+  let jugador = { nombre: "", puntos: 0 };
+
+  function iniciarJuego() {
+    const nombre = document.getElementById("nombreInput").value;
+    if (!nombre) return alert("Por favor ingresá tu nombre");
+    jugador.nombre = nombre;
+    jugador.puntos = 0;
+    document.getElementById("pantallaInicio").classList.add("hidden");
+    document.getElementById("nivel1").classList.remove("hidden");
+  }
+
+  let respuestasPorNivel = { 1: 0, 2: 0, 3: 0 };
+
+  function responder(nivel, esCorrecta) {
+    if (esCorrecta) jugador.puntos += 1;
+    respuestasPorNivel[nivel]++;
+    if (respuestasPorNivel[nivel] >= 2) {
+      document.getElementById("nivel" + nivel).classList.add("hidden");
+      if (nivel < 3) {
+        document.getElementById("nivel" + (nivel + 1)).classList.remove("hidden");
+      } else {
+        finalizarJuego();
+      }
+    }
+  }
+
+  function finalizarJuego() {
+    guardarPuntaje();
+    mostrarRanking();
+    document.getElementById("pantallaFinal").classList.remove("hidden");
+  }
+
+  function guardarPuntaje() {
+    let ranking = JSON.parse(localStorage.getItem("ranking") || "[]");
+    ranking.push({ nombre: jugador.nombre, puntos: jugador.puntos });
+    localStorage.setItem("ranking", JSON.stringify(ranking));
+  }
+
+  function mostrarRanking() {
+    let ranking = JSON.parse(localStorage.getItem("ranking") || "[]");
+    ranking.sort((a, b) => b.puntos - a.puntos);
+    let tabla = document.getElementById("ranking");
+    tabla.innerHTML = "<tr><th>Nombre</th><th>Puntos</th></tr>";
+    ranking.forEach(j => {
+      let fila = `<tr><td>${j.nombre}</td><td>${j.puntos}</td></tr>`;
+      tabla.innerHTML += fila;
+    });
+  }
+</script>
+
+</body>
+</html>
