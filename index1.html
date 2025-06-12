@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Desafío en la Naturaleza</title>
+  <style>
+    body {
+      margin: 0; padding: 0;
+      font-family: Arial, sans-serif;
+      background: #e6f2ed;
+      color: #333;
+      display: flex; justify-content: center; align-items: center;
+    }
+    #app {
+      max-width: 500px; width: 100%;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    header {
+      background: #2f8f6a;
+      color: #fff;
+      text-align: center;
+      padding: 15px 10px;
+    }
+    .screen { display: none; padding: 20px; }
+    .active { display: block; }
+    h2 { margin-top: 0; }
+    .question-icon { font-size: 2em; margin-right: 8px; vertical-align: middle; }
+    .question { margin: 20px 0; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin: 8px 0;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background: #2f8f6a;
+      color: #fff;
+    }
+    .btn:active { opacity: 0.8; }
+    #feedback {
+      font-size: 1.2em;
+      text-align: center;
+      margin: 15px 0;
+    }
+    table {
+      width: 100%; border-collapse: collapse; margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <h1>🌲 Desafío en la Naturaleza</h1>
+  </header>
+
+  <!-- PANTALLA INICIAL -->
+  <div id="startScreen" class="screen active">
+    <p>Ingresá tu nombre para empezar:</p>
+    <input type="text" id="playerName" placeholder="Tu nombre..." style="width:100%;padding:10px;font-size:1em;">
+    <button class="btn" onclick="startGame()">Iniciar juego</button>
+  </div>
+
+  <!-- PANTALLA DE CUESTIONARIO -->
+  <div id="quizScreen" class="screen">
+    <h2 id="levelTitle"></h2>
+    <div id="questionContainer"></div>
+    <div id="feedback"></div>
+  </div>
+
+  <!-- PANTALLA FINAL / RANKING -->
+  <div id="endScreen" class="screen">
+    <h2>🏆 Tabla de Posiciones</h2>
+    <table>
+      <thead><tr><th>Nombre</th><th>Puntos</th></tr></thead>
+      <tbody id="rankingBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const levels = [
+    {
+      title: '🌱 Brotecitos (Nivel Fácil)',
+      icon: '🌱',
+      questions: [
+        { text: '¿Qué modalidad de formación de grupos implica que el docente reúna o numere directamente a los participantes?', 
+          options:['A) Formación directa','B) Formación delegada'], correct:0 },
+        { text: 'Si utilizo la modalidad “por comando” para obtener grupos, mi objetivo es...', 
+          options:['A) Celeridad','B) Máxima participación'], correct:0 },
+        { text: 'Menciona uno de los ejemplos de “juegos de larga duración” que se juegan a lo largo de varias jornadas.', 
+          options:['A) "Llegó tu hora"','B) Carrera de relevos'], correct:0 }
+      ]
+    },
+    {
+      title: '🏕️ Acampantes (Nivel Medio)',
+      icon: '🏕️',
+      questions: [
+        { text: '¿Cuál de estas es una forma de usar el azar para conformar grupos antes de una actividad campamentil?', 
+          options:['A) Sacar papeletas con números al azar','B) Agruparse de a 5 compañeros'], correct:0 },
+        { text: '¿Alguna de las opciones de "todos contra todos"?', 
+          options:['A) Varias persecuciones simultáneas','B) Todos contra todos'], correct:1 },
+        { text: 'En un juego de investigación, tras recoger datos, ¿qué actividad complementaria suele usarse para compartir los resultados con el resto de los acampantes?', 
+          options:['A) Escribir un diario personal','B) Presentación oral de hallazgos'], correct:1 }
+      ]
+    },
+    {
+      title: '🧭 Exploradores (Nivel Experto)',
+      icon: '🧭',
+      questions: [
+        { text: '¿Qué caracteriza a la formación de grupos por modalidad “delegada”?', 
+          options:['A) El docente asigna directamente a cada participante','B) Cada equipo elige a un representante o delegado para formar los grupos'], correct:1 },
+        { text: 'En un itinerario de tipo “convergente (embudo)”, ¿qué aspecto organizativo debo prever si participan dos grupos al mismo tiempo?', 
+          options:['A) Coordinar los tiempos de llegada para evitar aglomeraciones en el punto convergente','B) Evitar por completo cualquier punto de convergencia'], correct:0 },
+        { text: '¿Cuál de estas actividades integra contenido ecologista dentro de un juego de búsqueda?', 
+          options:['A) Recolección de residuos en el entorno para clasificarlos','B) Limpiar la casa'], correct:0 }
+      ]
+    }
+  ];
+
+  const bonusLevel = {
+    title: '🔥 Nivel Extra (Doblemente Puntuado)',
+    icon: '🔥',
+    questions: [
+      { text: '¿A qué provincia argentina viajaremos?', options:['A) San Luis','B) Córdoba'], correct:0 },
+      { text: '¿Cuál es la principal capacidad que tienen que tener las capas internas de abrigo?', options:['A) Transpirable','B) Aislante'], correct:0 },
+      { text: '¿Cuál es la técnica más importante a desarrollar?', options:['A) La observación','B) Las físicas'], correct:0 }
+    ]
+  };
+
+  let player = { name:'', points:0, correctCount:0 };
+  let currentLevel = 0, currentQuestion = 0, questionStartTime;
+
+  function startGame() {
+    const name = document.getElementById('playerName').value.trim();
+    if (!name) return alert('Ingresá tu nombre');
+    player.name = name;
+    showScreen('quizScreen');
+    loadQuestion();
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function loadQuestion() {
+    let lvl = (currentLevel < levels.length) ? levels[currentLevel] : bonusLevel;
+    document.getElementById('levelTitle').innerHTML = `${lvl.icon} ${lvl.title}`;
+    const q = lvl.questions[currentQuestion];
+    const container = document.getElementById('questionContainer');
+    container.innerHTML = `
+      <div class="question">
+        <span class="question-icon">${lvl.icon}</span>
+        ${q.text}
+      </div>
+      ${q.options.map((opt,i)=>`<button class="btn" onclick="answer(${i})">${opt}</button>`).join('')}
+    `;
+    document.getElementById('feedback').innerText = '';
+    questionStartTime = Date.now();
+  }
+
+  function answer(choice) {
+    let lvl = (currentLevel < levels.length) ? levels[currentLevel] : bonusLevel;
+    const q = lvl.questions[currentQuestion];
+    const correct = (choice === q.correct);
+    const timeTaken = (Date.now() - questionStartTime)/1000;
+    let pts = 0;
+    if (correct) {
+      // Puntos base
+      pts = (currentLevel < levels.length) ? 1 : 2;
+      // Bonificación por rapidez (<5s)
+      if (timeTaken < 5) pts += 1;
+      player.correctCount++;
+      player.points += pts;
+      document.getElementById('feedback').innerHTML = `✔ Correcto! +${pts} pts`;
+    } else {
+      document.getElementById('feedback').innerHTML = '✘ Incorrecto!';
+    }
+
+    // Avanzar a siguiente pregunta
+    setTimeout(() => {
+      currentQuestion++;
+      // Si terminó nivel
+      const totalQs = lvl.questions.length;
+      if (currentQuestion >= totalQs) {
+        // ¿Desbloquear extra?
+        if (currentLevel === levels.length -1 && player.correctCount >= 10) {
+          currentLevel++;
+          currentQuestion = 0;
+          loadQuestion();
+          return;
+        }
+        // Siguiente nivel o fin
+        if (currentLevel < levels.length -1) {
+          currentLevel++; currentQuestion = 0; loadQuestion();
+        } else {
+          endGame();
+        }
+      } else {
+        loadQuestion();
+      }
+    }, 1000);
+  }
+
+  function endGame() {
+    saveScore();
+    showRanking();
+    showScreen('endScreen');
+  }
+
+  function saveScore() {
+    let rank = JSON.parse(localStorage.getItem('rank')||'[]');
+    rank.push({name:player.name,pts:player.points});
+    localStorage.setItem('rank', JSON.stringify(rank));
+  }
+
+  function showRanking() {
+    let rank = JSON.parse(localStorage.getItem('rank')||'[]');
+    rank.sort((a,b)=>b.pts - a.pts);
+    const tbody = document.getElementById('rankingBody');
+    tbody.innerHTML = rank.map(r=>`<tr><td>${r.name}</td><td>${r.pts}</td></tr>`).join('');
+  }
+</script>
+
+</body>
+</html>
